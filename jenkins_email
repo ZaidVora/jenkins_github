@@ -1,0 +1,71 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Build') {
+            steps {
+                echo 'Building the application...'
+                // Use Maven as the build tool
+                sh 'mvn clean package'
+            }
+        }
+        stage('Unit and Integration Tests') {
+            steps {
+                echo 'Running unit and integration tests...'
+                // Use JUnit for unit tests and Postman/Newman for integration tests
+                sh 'mvn test'
+            }
+        }
+        stage('Code Analysis') {
+            steps {
+                echo 'Analyzing code quality...'
+                // Use SonarQube for code analysis
+                sh 'sonar-scanner'
+            }
+        }
+        stage('Security Scan') {
+            steps {
+                echo 'Running security scan...'
+                // Use OWASP Dependency-Check for security scanning
+                sh 'dependency-check.sh --project MyProject --scan .'
+            }
+        }
+        stage('Deploy to Staging') {
+            steps {
+                echo 'Deploying to staging environment...'
+                // Deployment to AWS EC2 instance (replace with your own deployment script)
+                sh 'deploy_to_staging.sh'
+            }
+        }
+        stage('Integration Tests on Staging') {
+            steps {
+                echo 'Running integration tests on staging...'
+                // Run integration tests on staging environment
+                sh 'run_staging_tests.sh'
+            }
+        }
+        stage('Deploy to Production') {
+            steps {
+                echo 'Deploying to production environment...'
+                // Deployment to AWS EC2 instance (replace with your own deployment script)
+                sh 'deploy_to_production.sh'
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline execution completed.'
+        }
+        success {
+            mail to: 'zaidvora58@example.com',
+                 subject: "Jenkins Pipeline Success: ${currentBuild.fullDisplayName}",
+                 body: "The pipeline has successfully completed."
+        }
+        failure {
+            mail to: 'zaidvora@example.com',
+                 subject: "Jenkins Pipeline Failure: ${currentBuild.fullDisplayName}",
+                 body: "The pipeline has failed. Check Jenkins logs for more details."
+        }
+    }
+}
