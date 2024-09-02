@@ -1,71 +1,91 @@
-pipeline {
-    agent any
-
-    stages {
-        stage('Build') {
-            steps {
-                echo 'Building the application...'
-                // Use Maven as the build tool
-                sh 'mvn clean package'
-            }
-        }
-        stage('Unit and Integration Tests') {
-            steps {
-                echo 'Running unit and integration tests...'
-                // Use JUnit for unit tests and Postman/Newman for integration tests
-                sh 'mvn test'
-            }
-        }
-        stage('Code Analysis') {
-            steps {
-                echo 'Analyzing code quality...'
-                // Use SonarQube for code analysis
-                sh 'sonar-scanner'
-            }
-        }
-        stage('Security Scan') {
-            steps {
-                echo 'Running security scan...'
-                // Use OWASP Dependency-Check for security scanning
-                sh 'dependency-check.sh --project MyProject --scan .'
-            }
-        }
-        stage('Deploy to Staging') {
-            steps {
-                echo 'Deploying to staging environment...'
-                // Deployment to AWS EC2 instance (replace with your own deployment script)
-                sh 'deploy_to_staging.sh'
-            }
-        }
-        stage('Integration Tests on Staging') {
-            steps {
-                echo 'Running integration tests on staging...'
-                // Run integration tests on staging environment
-                sh 'run_staging_tests.sh'
-            }
-        }
-        stage('Deploy to Production') {
-            steps {
-                echo 'Deploying to production environment...'
-                // Deployment to AWS EC2 instance (replace with your own deployment script)
-                sh 'deploy_to_production.sh'
-            }
-        }
-    }
-
-    post {
-        always {
-            echo 'Pipeline execution completed.'
-        }
-        success {
-            mail to: 'zaidvora58@example.com',
-                 subject: "Jenkins Pipeline Success: ${currentBuild.fullDisplayName}",
-                 body: "The pipeline has successfully completed."
-        }
-        failure {
-            mail to: 'zaidvora@example.com',
-                 subject: "Jenkins Pipeline Failure: ${currentBuild.fullDisplayName}",
-                 body: "The pipeline has failed. Check Jenkins logs for more details."
-        }
-    }
-}
+pipeline {      
+    agent any  
+ 
+    environment {  
+        DIRECTORY_PATH = "/"  
+        TESTING_ENVIRONMENT = "test"  
+        PRODUCTION_ENVIRONMENT = "harsh"  
+    } 
+ 
+    stages {          
+        stage('Build') {              
+            steps {  
+                echo 'fetch the source code from the directory path specified by the environment variable'  
+                echo 'compile the code and generate any necessary artifacts'  
+            }  
+        } 
+ 
+        stage('Unit and Integration Tests') {              
+            steps {  
+                echo 'Running unit tests'  
+                echo 'Running integration tests'  
+            }              
+            post {                  
+                success {  
+                    emailext body: "The Unit and Integration Test is successful.",                      
+                             subject: "Testing Stage Success",                      
+                             to: "zaidvora58@gmail.com"  
+                }  
+            }  
+        } 
+ 
+        stage('Code Quality Check') {              
+            steps {  
+                echo 'check the quality of the code'  
+            }  
+        } 
+ 
+        stage('Security Scan') {              
+            steps {  
+                echo 'used checkstyle, pmd, etc. to scan the code for vulnerabilities...'  
+            }              
+            post {                  
+                success {  
+                    emailext body: "The Security scan is successful.",                      
+                             subject: "Security Stage Success",                      
+                             to: "zaidvora58@gmail.com"  
+                }  
+            }  
+        } 
+ 
+        stage('Deploy') {              
+            steps {  
+                echo 'deploy the application to staging server, an EC2 instance...'  
+            }  
+        } 
+ 
+        stage('Integration test on staging') {              
+            steps {  
+                echo 'Integration test running on staging server...'  
+            }  
+        } 
+ 
+        stage('Approval') {  
+            steps {  
+                echo 'waiting for approval by the admin....'  
+                sleep 10  
+            }  
+        } 
+ 
+        stage('Deploy to Production') {              
+            steps {  
+                echo 'deploying code to prod environment (${env.PRODUCTION_ENVIRONMENT})'  
+            }  
+        }  
+    } 
+ 
+    post {  
+        always {  
+            archiveArtifacts artifacts: '**/log/**', allowEmptyArchive: true 
+ 
+            // Send an email with the build log attached 
+            emailext( 
+                to: 'zaidvora58@gmail.com', 
+                subject: "Jenkins Job ${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - ${currentBuild.currentResult}", 
+                body: """<p>Job ${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - ${currentBuild.currentResult}</p> 
+                         <p>Please find the attached log file for details.</p>""", 
+                attachLog: true 
+            ) 
+        }  
+    }  
+}  
